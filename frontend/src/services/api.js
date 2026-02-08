@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Helper para hacer requests con fetch
 async function request(endpoint, options = {}) {
     const token = localStorage.getItem('token');
 
@@ -12,71 +13,104 @@ async function request(endpoint, options = {}) {
     },
     };
 
-    // Eliminamos el try/catch innecesario
-    const response = await fetch(`${API_URL}${endpoint}`, config);
+    const url = `${API_URL}${endpoint}`;
 
-    // Es importante parsear el JSON antes de checkear response.ok 
-    // para obtener el mensaje de error del servidor
+    console.log('🔵 Request:', {
+    url,
+    method: config.method || 'GET',
+    });
+
+    try {
+    const response = await fetch(url, config);
+
+    console.log('🟢 Response status:', response.status);
+
+    // Intentar parsear como JSON
     const data = await response.json();
 
     if (!response.ok) {
-    throw new Error(data.message || 'Error en la petición');
+        throw new Error(data.message || 'Error en la petición');
     }
 
     return data;
+    } catch (error) {
+    console.error('🔴 Error:', error);
+    throw error;
+    }
 }
 
 // Métodos HTTP
 export const api = {
-    // GET
     get: (endpoint) => {
-    return request(endpoint, { method: 'GET' });
+        return request(endpoint, { method: 'GET' });
     },
 
-    // POST
     post: (endpoint, body) => {
-    return request(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(body),
-    });
+        return request(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(body),
+        });
     },
 
-    // PUT
     put: (endpoint, body) => {
-    return request(endpoint, {
-        method: 'PUT',
-        body: JSON.stringify(body),
-    });
+        return request(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(body),
+        });
     },
 
-    // DELETE
     delete: (endpoint) => {
-    return request(endpoint, {
-        method: 'DELETE',
-    });
+        return request(endpoint, {
+            method: 'DELETE',
+        });
     },
 };
 
-// Servicios específicos de autenticación
+// Servicios de autenticación
 export const authService = {
     login: async (email, password) => {
-    const data = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.usuario));
-    return data;
+        const data = await api.post('/auth/login', { email, password });
+
+        if (data.success && data.token) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.usuario));
+        }
+
+        return data;
+    },
+
+    register: async (nombre, email, password, telefono) => {
+        const data = await api.post('/auth/register', { 
+            nombre, 
+            email, 
+            password, 
+            telefono 
+        });
+
+        if (data.success && data.token) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.usuario));
+        }
+
+        return data;
     },
 
     logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
     },
 
     getUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+        const user = localStorage.getItem('user');
+        return user ? JSON.parse(user) : null;
     },
 
     isAuthenticated: () => {
         return !!localStorage.getItem('token');
     },
+
+    isAdmin: () => {
+        const user = authService.getUser();
+        return user?.rol === 'admin';
+    }
 };

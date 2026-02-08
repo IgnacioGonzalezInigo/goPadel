@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { authService } from "../../services/api";
-import "./Login.css";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/api';
+import './Login.css';
 
-export default function Login () {
-    const [email,setEmail] = useState('');
+export default function Login() {
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState('');
-
+    const [loading, setLoading] = useState(false);
+    
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -17,24 +17,33 @@ export default function Login () {
         setLoading(true);
 
         try {
-            await authService.login(email,password);
-            navigate ('/admin/dashboard');
-        } catch (err){
-            setError(err.message || 'Error al iniciar sesión');
+        console.log('🔐 Intentando login...');
+        const response = await authService.login(email, password);
+        
+        console.log('✅ Login exitoso:', response);
+        
+        // Redirigir al dashboard
+        navigate('/admin/dashboard');
+        } catch (err) {
+        console.error('❌ Error en login:', err);
+        setError(err.message || 'Error al iniciar sesión');
         } finally {
-            setLoading(false);
+        setLoading(false);
         }
     };
 
     return (
         <div className="login-container">
         <div className="login-box">
-            <h1 className="login-title">goPadel</h1>
+            <div className="login-header">
+            <h1 className="login-title">🎾 PadelBook</h1>
             <p className="login-subtitle">Panel de Administración</p>
+            </div>
 
             {error && (
             <div className="alert alert-error">
-                {error}
+                <span>⚠️</span>
+                <span>{error}</span>
             </div>
             )}
 
@@ -49,6 +58,7 @@ export default function Login () {
                 placeholder="admin@padelbook.com"
                 required
                 disabled={loading}
+                autoComplete="email"
                 />
             </div>
 
@@ -62,6 +72,7 @@ export default function Login () {
                 placeholder="••••••••"
                 required
                 disabled={loading}
+                autoComplete="current-password"
                 />
             </div>
 
@@ -70,9 +81,16 @@ export default function Login () {
                 className="btn btn-primary"
                 disabled={loading}
             >
-                {loading ? 'Cargando...' : 'Iniciar Sesión'}
+                {loading ? '⏳ Cargando...' : '🚀 Iniciar Sesión'}
             </button>
             </form>
+
+            <div className="login-footer">
+            <p className="help-text">
+                💡 Credenciales por defecto:<br />
+                <strong>admin@padelbook.com</strong> / <strong>admin123</strong>
+            </p>
+            </div>
         </div>
         </div>
     );
