@@ -46,6 +46,9 @@ app.get('/api/health', (req, res) => {
 // Rutas de autenticación
 app.use('/api/auth', require('./routes/auth'));
 
+// Rutas de reserva
+app.use('/api/reservas', require('./routes/reservas'));
+
 // Manejo de rutas no encontradas
 app.use((req, res) => {
     res.status(404).json({ 
